@@ -50,9 +50,10 @@ def randomized_rounding(v, k):
 
 def sparsity(A, S):
     """Computes the sparsity of a cut S, where S is a set of vertex indices"""
-    total = sp.sum(A)
+    total = sp.sum(A)/2
     crossing = 0
     total_S = 0
+    total_inside = 0
     for i in range(len(A)):
         if(i not in S):
             continue
@@ -61,15 +62,16 @@ def sparsity(A, S):
                 crossing += A[i][j]
                 total_S += A[i][j]
             else:
+                total_inside += A[i][j]/2
                 total_S += A[i][j]/2
-    sparsity = crossing/total_S
-    if(total_S > total - total_S):
+    if(total_S > total - total_inside):
         # Take the minimum of w(S) and w(S_c), where S_c is the complement of S
-        total_S = total - total_S
+        total_S = total - total_inside
+    sparsity = crossing/total_S
     return sparsity
 
 
-def cheeger_sweep(A, h):
+def cheeger_sweep(A, h, threshold):
     sets = []
     for i in range(len(h)):
         S = set()
@@ -79,11 +81,11 @@ def cheeger_sweep(A, h):
         sparsest_set = {}
         for i in range(len(nz_indices)):
             S.add(nz_indices[i])
-            tmp = sparsity(A, S)
-            if(tmp < min_sparsity):
-                min_sparsity = tmp
+            if(sparsity(A, S) < min_sparsity):
+                min_sparsity = sparsity(A, S)
                 sparsest_set = S
-        sets.append((sparsest_set, min_sparsity))
+        if(min_sparsity <= threshold):
+            sets.append((sparsest_set, sparsity(A, sparsest_set)))
     return sets
 
 
@@ -93,6 +95,7 @@ if __name__ == '__main__':
     input_file = open(f, 'r')
     A = [y.strip('\n').rstrip(' ') for y in list(input_file)]
     A = [[float(z) for z in y.split(' ')] for y in A]
+    c = float(input('constant:'))
     print('Graph:')
     print(A)
     L = laplacian(A)
@@ -101,10 +104,13 @@ if __name__ == '__main__':
     (w, v) = spectral_projection(L, k)
     print('Eigenvalues: ')
     print(w)
+    threshold = c*(w[0]*sp.log(k))
+    print('threshold:')
+    print(threshold)
     print('Eigenvectors: ')
     print(v.T)
     h = randomized_rounding(v, k)
     print('h:')
     print(h)
     print('Cheeger sweep sets:')
-    print(cheeger_sweep(A, h))
+    print(cheeger_sweep(A, h, threshold))
