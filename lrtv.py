@@ -64,7 +64,7 @@ def sparsity(A, S):
     return sparsity
 
 
-def cheeger_sweep(A, v, k, c, lambda_k):
+def cheeger_sweep(A, v, k, lambda_k, f):
     """Generate h and take best cut in some ck trials"""
     # repeat the algorithm for
     h = randomized_rounding(v, k)
@@ -91,30 +91,123 @@ def cheeger_sweep(A, v, k, c, lambda_k):
         sets.append((sparsest_set, min_sparsity, min_sparsity/threshold))
     # Sort the k-cuts according to their min_sparsity/threshold ratio
     k_cuts = sorted(sets, key=lambda x: x[2], reverse=True)
+    tmp_str = list(map(str, k_cuts))
+    tmp_str = ' '.join(tmp_str)
+    tmp_str += '\n\n'
+    tmp_str = tmp_str.encode('utf-8')
+    f.write(tmp_str)
     return k_cuts
 
 
-def lrtv(A, v, k, c, lambda_k, trials):
+def lrtv(A, v, k, lambda_k, trials, f):
     """Call cheeger_sweep for a few number of trials"""
     for i in range(0, trials):
-        print('k-cuts:')
-        print(cheeger_sweep(A, v, k, c, lambda_k))
+        cheeger_sweep(A, v, k, lambda_k, f)
 
 
-if __name__ == '__main__':
-    k = int(input('k = '))
-    n = int(input('n = '))
-    # fname = input('file:')
-    # f = open(fname, 'r')
-    # A = [y.strip('\n').rstrip(' ') for y in list(f)]
-    # A = [[float(z) for z in y.split(' ')] for y in A]
-    G = nx.fast_gnp_random_graph(n, 0.5)
+def grid_graph():
+    n = int(input('Number of dimensions: '))
+    d = []
+    for i in range(0, n):
+        tmp = int(input('Size of dimension ' + str(i+1) + ': '))
+        d.append(tmp)
+    G = nx.grid_graph(dim=d)
+    return G
+
+
+def hypercube():
+    n = int(input('Number of dimensions: '))
+    G = nx.hypercube_graph(n)
+    return G
+
+
+def random_graph():
+    n = int(input('Number of vertices'))
+    p = float(input('probability: '))
+    G = nx.fast_gnp_random_graph(n, p)
+    return G
+
+
+def random_regular():
+    n = int(input('Number of nodes: '))
+    d = int(input('degree: '))
+    G = nx.random_regular_graph(d, n)
+    return G
+
+
+def complete_graph():
+    n = int(input('Number of nodes: '))
+    G = nx.complete_graph(n)
+    return G
+
+
+def complete_bipartite():
+    n = int(input('Number of nodes in partition 1: '))
+    m = int(input('Number of nodes in partition 2: '))
+    G = nx.complete_bipartite_graph(n, m)
+    return G
+
+
+def path_graph():
+    n = int(input('number of nodes in path: '))
+    G = nx.path_graph(n)
+    return G
+
+
+def binary_tree():
+    h = int(input('height of the tree: '))
+    G = nx.balanced_tree(2, h)
+    return G
+
+
+def draw(G):
+    fname = input('save picture as: ')
+    fname += '.png'
     nx.draw(G)
-    plt.savefig('fig.png')
+    plt.savefig(fname)
+
+
+def generate_grid_graph():
+    k = int(input('k for grid graph:'))
+    trials = int(input('number of trials for:'))
+    gridfname = input('output file:')
+    gridfname = 'hard_instances/' + gridfname
+    gridfile = open(gridfname, 'wb', 0)
+    G = grid_graph()
     A = nx.adjacency_matrix(G).toarray()
-    c = float(input('constant:'))
-    trials = int(input('number of runs: '))
     L = nx.normalized_laplacian_matrix(G).toarray()
     (w, v) = spectral_projection(L, k)
     lambda_k = w[0]
-    lrtv(A, v, k, c, lambda_k, trials)
+    lrtv(A, v, k, lambda_k, trials, gridfile)
+
+
+def generate_hard_instances():
+    '''Generates cuts for known hard instances for k-sparse-cuts'''
+    flag = int(input('1 for grid graph, 2 for product:'))
+    if flag == 1:
+        generate_grid_graph()
+    elif flag == 2:
+        generate_product_graph()
+    else:
+        generate_grid_graph()
+        generate_product_graph()
+
+
+def generate_product_graph():
+    k = int(input('k for product of tree & path:'))
+    trials = int(input('number of trials:'))
+    prodfname = input('output file:')
+    prodfname = 'hard_instances/' + prodfname
+    prodfile = open(prodfname, 'wb', 0)
+    G = path_graph()
+    H = binary_tree()
+    T = nx.cartesian_product(G, H)
+    A = nx.adjacency_matrix(T).toarray()
+    L = nx.normalized_laplacian_matrix(T).toarray()
+    (w, v) = spectral_projection(L, k)
+    lambda_k = w[0]
+    lrtv(A, v, k, lambda_k, trials, prodfile)
+
+
+if __name__ == '__main__':
+    generate_hard_instances()
