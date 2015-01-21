@@ -104,12 +104,14 @@ def lrtv(A, v, k, lambda_k, trials, f):
 
 
 def hypercube():
+    '''Generates a hypercube'''
     n = int(input('Number of dimensions: '))
     G = nx.hypercube_graph(n)
     return G
 
 
 def random_graph():
+    '''Erdos-Renyi G(n,p) graph'''
     n = int(input('Number of vertices'))
     p = float(input('probability: '))
     G = nx.fast_gnp_random_graph(n, p)
@@ -117,6 +119,7 @@ def random_graph():
 
 
 def random_regular():
+    '''Generates a random regular graph'''
     n = int(input('Number of nodes: '))
     d = int(input('degree: '))
     G = nx.random_regular_graph(d, n)
@@ -124,12 +127,14 @@ def random_regular():
 
 
 def complete_graph():
+    '''Generates a complete graph'''
     n = int(input('Number of nodes: '))
     G = nx.complete_graph(n)
     return G
 
 
 def complete_bipartite():
+    '''Generates a complete bipartite graph'''
     n = int(input('Number of nodes in partition 1: '))
     m = int(input('Number of nodes in partition 2: '))
     G = nx.complete_bipartite_graph(n, m)
@@ -137,6 +142,7 @@ def complete_bipartite():
 
 
 def draw(G):
+    '''Draws the graph and saves it as a png'''
     fname = input('save picture as: ')
     fname += '.png'
     nx.draw(G)
@@ -144,6 +150,7 @@ def draw(G):
 
 
 def generate_grid_graph():
+    '''Generates k cuts for grid graphs'''
     k = int(input('k for grid graph:'))
     trials = int(input('number of trials:'))
     gridfname = input('output file:')
@@ -175,6 +182,7 @@ def generate_grid_graph():
 
 
 def generate_product_graph():
+    '''Generates k cuts for cartesian product of a path and a binary tree'''
     k = int(input('k for product of tree & path:'))
     trials = int(input('number of trials:'))
     prodfname = input('output file:')
@@ -216,6 +224,7 @@ def generate_noisy_hypercube():
     nodes = 2**n
     epsilon = float(input('noise:'))
     G = nx.empty_graph(nodes)
+    print('number of vertices: ' + str(len(G.nodes())))
     for u in G.nodes():
         for v in G.nodes():
             if u == v:
