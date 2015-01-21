@@ -91,28 +91,16 @@ def cheeger_sweep(A, v, k, lambda_k, f):
         sets.append((sparsest_set, min_sparsity, min_sparsity/threshold))
     # Sort the k-cuts according to their min_sparsity/threshold ratio
     k_cuts = sorted(sets, key=lambda x: x[2], reverse=True)
-    tmp_str = list(map(str, k_cuts))
-    tmp_str = ' '.join(tmp_str)
-    tmp_str += '\n\n'
-    tmp_str = tmp_str.encode('utf-8')
-    f.write(tmp_str)
     return k_cuts
 
 
 def lrtv(A, v, k, lambda_k, trials, f):
     """Call cheeger_sweep for a few number of trials"""
+    k_cuts_list = []
     for i in range(0, trials):
-        cheeger_sweep(A, v, k, lambda_k, f)
-
-
-def grid_graph():
-    n = int(input('Number of dimensions: '))
-    d = []
-    for i in range(0, n):
-        tmp = int(input('Size of dimension ' + str(i+1) + ': '))
-        d.append(tmp)
-    G = nx.grid_graph(dim=d)
-    return G
+        k_cuts = cheeger_sweep(A, v, k, lambda_k, f)
+        k_cuts_list.append(k_cuts)
+    return k_cuts_list
 
 
 def hypercube():
@@ -148,18 +136,6 @@ def complete_bipartite():
     return G
 
 
-def path_graph():
-    n = int(input('number of nodes in path: '))
-    G = nx.path_graph(n)
-    return G
-
-
-def binary_tree():
-    h = int(input('height of the tree: '))
-    G = nx.balanced_tree(2, h)
-    return G
-
-
 def draw(G):
     fname = input('save picture as: ')
     fname += '.png'
@@ -169,16 +145,64 @@ def draw(G):
 
 def generate_grid_graph():
     k = int(input('k for grid graph:'))
-    trials = int(input('number of trials for:'))
+    trials = int(input('number of trials:'))
     gridfname = input('output file:')
     gridfname = 'hard_instances/' + gridfname
     gridfile = open(gridfname, 'wb', 0)
-    G = grid_graph()
+    n = int(input('Number of dimensions: '))
+    d = []
+    for i in range(0, n):
+        tmp = int(input('Size of dimension ' + str(i+1) + ': '))
+        d.append(tmp)
+    G = nx.grid_graph(dim=d)
     A = nx.adjacency_matrix(G).toarray()
     L = nx.normalized_laplacian_matrix(G).toarray()
     (w, v) = spectral_projection(L, k)
     lambda_k = w[0]
-    lrtv(A, v, k, lambda_k, trials, gridfile)
+    k_cuts_list = lrtv(A, v, k, lambda_k, trials, gridfile)
+    tmp_str = 'Grid graph of dimension: ' + str(d) + '\n'
+    tmp_str += 'k = ' + str(k) + ', '
+    tmp_str += 'trials = ' + str(trials) + '\n\n\n'
+    tmp_str = tmp_str.encode('utf-8')
+    gridfile.write(tmp_str)
+    for i in range(len(k_cuts_list)):
+        k_cuts = k_cuts_list[i]
+        tmp_str = list(map(str, k_cuts))
+        tmp_str = ' '.join(tmp_str)
+        tmp_str += '\n\n'
+        tmp_str = tmp_str.encode('utf-8')
+        gridfile.write(tmp_str)
+
+
+def generate_product_graph():
+    k = int(input('k for product of tree & path:'))
+    trials = int(input('number of trials:'))
+    prodfname = input('output file:')
+    prodfname = 'hard_instances/' + prodfname
+    prodfile = open(prodfname, 'wb', 0)
+    h = int(input('height of the tree: '))
+    H = nx.balanced_tree(2, h)
+    n = int(input('number of nodes in path: '))
+    G = nx.path_graph(n)
+    T = nx.cartesian_product(G, H)
+    A = nx.adjacency_matrix(T).toarray()
+    L = nx.normalized_laplacian_matrix(T).toarray()
+    (w, v) = spectral_projection(L, k)
+    lambda_k = w[0]
+    tmp_str = 'Cartesian product of balanced tree of height ' + str(h)
+    tmp_str += ' and path of length ' + str(n-1) + '\n'
+    tmp_str += 'k = ' + str(k) + ', '
+    tmp_str += 'trials = ' + str(trials) + '\n\n\n'
+    tmp_str = tmp_str.encode('utf-8')
+    prodfile.write(tmp_str)
+    k_cuts_list = lrtv(A, v, k, lambda_k, trials, prodfile)
+    for i in range(len(k_cuts_list)):
+        k_cuts = k_cuts_list[i]
+        tmp_str = list(map(str, k_cuts))
+        tmp_str = ' '.join(tmp_str)
+        tmp_str += '\n\n'
+        tmp_str = tmp_str.encode('utf-8')
+        prodfile.write(tmp_str)
 
 
 def generate_hard_instances():
@@ -191,22 +215,6 @@ def generate_hard_instances():
     else:
         generate_grid_graph()
         generate_product_graph()
-
-
-def generate_product_graph():
-    k = int(input('k for product of tree & path:'))
-    trials = int(input('number of trials:'))
-    prodfname = input('output file:')
-    prodfname = 'hard_instances/' + prodfname
-    prodfile = open(prodfname, 'wb', 0)
-    G = path_graph()
-    H = binary_tree()
-    T = nx.cartesian_product(G, H)
-    A = nx.adjacency_matrix(T).toarray()
-    L = nx.normalized_laplacian_matrix(T).toarray()
-    (w, v) = spectral_projection(L, k)
-    lambda_k = w[0]
-    lrtv(A, v, k, lambda_k, trials, prodfile)
 
 
 if __name__ == '__main__':
