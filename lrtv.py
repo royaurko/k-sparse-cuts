@@ -205,16 +205,68 @@ def generate_product_graph():
         prodfile.write(tmp_str)
 
 
+def generate_noisy_hypercube():
+    '''Generates n dimensional noisy hypercube graph, with epsilon noise'''
+    k = int(input('k for noisy hypercube: '))
+    trials = int(input('number of trials: '))
+    cubefname = input('output file:')
+    cubefname = 'hard_instances/' + cubefname
+    cubefile = open(cubefname, 'wb', 0)
+    n = int(input('dimension of hypercube: '))
+    nodes = 2**n
+    epsilon = float(input('noise:'))
+    G = nx.empty_graph(nodes)
+    for u in G.nodes():
+        for v in G.nodes():
+            if u == v:
+                continue
+            else:
+                w = hamming_dist(u, v, n)
+                G.add_edge(u, v, weight=epsilon**w)
+    A = nx.adjacency_matrix(G).toarray()
+    L = nx.normalized_laplacian_matrix(G).toarray()
+    (w, v) = spectral_projection(L, k)
+    lambda_k = w[0]
+    tmp_str = 'Noisy hypercube of dimension ' + str(n)
+    tmp_str += ' with noise parameter ' + str(epsilon) + '\n'
+    tmp_str += 'k = ' + str(k) + ', '
+    tmp_str += 'trials = ' + str(trials) + '\n\n\n'
+    tmp_str = tmp_str.encode('utf-8')
+    cubefile.write(tmp_str)
+    k_cuts_list = lrtv(A, v, k, lambda_k, trials, cubefile)
+    for i in range(len(k_cuts_list)):
+        k_cuts = k_cuts_list[i]
+        tmp_str = list(map(str, k_cuts))
+        tmp_str = ' '.join(tmp_str)
+        tmp_str += '\n\n'
+        tmp_str = tmp_str.encode('utf-8')
+        cubefile.write(tmp_str)
+
+
 def generate_hard_instances():
     '''Generates cuts for known hard instances for k-sparse-cuts'''
-    flag = int(input('1 for grid graph, 2 for product:'))
+    flag = int(input('1 for grid graph, 2 for product, 3 for noisy hypercube:'))
     if flag == 1:
         generate_grid_graph()
     elif flag == 2:
         generate_product_graph()
+    elif flag == 3:
+        generate_noisy_hypercube()
     else:
+        # Else generate all
+        generate_noisy_hypercube()
         generate_grid_graph()
         generate_product_graph()
+
+
+def hamming_dist(x, y, n):
+    '''Return hamming distance of two n bit integers'''
+    tmp_str = '{0:0'
+    tmp_str += str(n)
+    tmp_str += 'b}'
+    x = tmp_str.format(x)
+    y = tmp_str.format(y)
+    return sum(ch1 != ch2 for ch1, ch2 in zip(x, y))
 
 
 if __name__ == '__main__':
