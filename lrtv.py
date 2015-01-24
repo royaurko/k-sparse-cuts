@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import scipy as sp
 import scipy.linalg as la
 import networkx as nx
@@ -13,7 +14,7 @@ def spectral_projection(A, k):
 
 
 def generate_gaussians(k):
-    """Generate k spherical k-dimensional Gaussians g_1, ..., g_k"""
+    """Generate k iid spherical k-dim Gaussians g_1, ..., g_k"""
     mean = [0 for x in range(0, k)]
     covariance = sp.matrix(sp.identity(k), copy=False)
     g = []
@@ -72,7 +73,7 @@ def cheeger_sweep(A, v, k, lambda_k, f):
     threshold = lambda_k * sp.log(k)
     threshold = threshold ** 0.5
     for i in range(0, k):
-        indices = [j[0] for j in sorted(enumerate(h[i]), key=lambda x: x[1])]
+        indices = [j[0] for j in sorted(enumerate(h[i]), key=lambda x: abs(x[1]))]
         # Discard vertices with zero entries
         nz_indices = [j for j in indices if h[i][j] != 0]
         if not nz_indices:
@@ -224,14 +225,14 @@ def generate_noisy_hypercube():
     nodes = 2**n
     epsilon = float(input('noise:'))
     G = nx.empty_graph(nodes)
-    print('number of vertices: ' + str(len(G.nodes())))
     for u in G.nodes():
         for v in G.nodes():
             if u == v:
                 continue
             else:
-                w = hamming_dist(u, v, n)
-                G.add_edge(u, v, weight=epsilon**w)
+                d = hamming_dist(u, v, n)
+                w = epsilon**d
+                G.add_edge(u, v, weight=w)
     A = nx.adjacency_matrix(G).toarray()
     L = nx.normalized_laplacian_matrix(G).toarray()
     (w, v) = spectral_projection(L, k)
@@ -279,4 +280,7 @@ def hamming_dist(x, y, n):
 
 
 if __name__ == '__main__':
+    foldername = 'hard_instances'
+    if not os.path.exists(foldername):
+        os.makedirs(foldername)
     generate_hard_instances()
