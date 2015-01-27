@@ -35,7 +35,7 @@ def randomized_rounding(v, k):
             inner_prd = [sp.dot(v[j], x) for x in g]
             i_max = inner_prd.index(max(inner_prd))
             if(i == i_max):
-                tmp.append(inner_prd[i])
+                tmp.append(sp.dot(v[j], v[j]))
             else:
                 tmp.append(0)
         h.append(tmp)
@@ -91,7 +91,7 @@ def cheeger_sweep(A, v, k, lambda_k, f):
         # At this point we have the sparsest cheeger cut from h_i
         sets.append((sparsest_set, min_sparsity, min_sparsity/threshold))
     # Sort the k-cuts according to their min_sparsity/threshold ratio
-    k_cuts = sorted(sets, key=lambda x: x[2], reverse=True)
+    k_cuts = sorted(sets, key=lambda x: x[2], reverse=False)
     return k_cuts
 
 
@@ -150,6 +150,14 @@ def draw(G):
     plt.savefig(fname)
 
 
+def plot(k_cuts_list, plotname):
+    scale = 100
+    for i in range(len(k_cuts_list)):
+        y_data = [y for (x, y, z) in k_cuts_list[i]]
+        x_data = [x*scale for x in range(len(y_data))]
+        plt.plot(x_data, y_data, linewidth=2.0)
+
+
 def generate_grid_graph():
     '''Generates k cuts for grid graphs'''
     k = int(input('k for grid graph:'))
@@ -168,6 +176,9 @@ def generate_grid_graph():
     (w, v) = spectral_projection(L, k)
     lambda_k = w[0]
     k_cuts_list = lrtv(A, v, k, lambda_k, trials, gridfile)
+    plotname = gridfname + 'plot'
+    plot(k_cuts_list, plotname)
+    plt.savefig(plotname)
     tmp_str = 'Grid graph of dimension: ' + str(d) + '\n'
     tmp_str += 'k = ' + str(k) + ', '
     tmp_str += 'trials = ' + str(trials) + '\n\n\n'
@@ -205,6 +216,8 @@ def generate_product_graph():
     tmp_str = tmp_str.encode('utf-8')
     prodfile.write(tmp_str)
     k_cuts_list = lrtv(A, v, k, lambda_k, trials, prodfile)
+    plotname = prodfname + 'plot'
+    plot(k_cuts_list, plotname)
     for i in range(len(k_cuts_list)):
         k_cuts = k_cuts_list[i]
         tmp_str = list(map(str, k_cuts))
@@ -244,6 +257,8 @@ def generate_noisy_hypercube():
     tmp_str = tmp_str.encode('utf-8')
     cubefile.write(tmp_str)
     k_cuts_list = lrtv(A, v, k, lambda_k, trials, cubefile)
+    plotname = cubefname + 'plot'
+    plot(k_cuts_list, plotname)
     for i in range(len(k_cuts_list)):
         k_cuts = k_cuts_list[i]
         tmp_str = list(map(str, k_cuts))
