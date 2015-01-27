@@ -156,6 +156,7 @@ def plot(k_cuts_list, plotname):
         y_data = [y for (x, y, z) in k_cuts_list[i]]
         x_data = [x*scale for x in range(len(y_data))]
         plt.plot(x_data, y_data, linewidth=2.0)
+    plt.savefig(plotname)
 
 
 def generate_grid_graph():
@@ -178,7 +179,6 @@ def generate_grid_graph():
     k_cuts_list = lrtv(A, v, k, lambda_k, trials, gridfile)
     plotname = gridfname + 'plot'
     plot(k_cuts_list, plotname)
-    plt.savefig(plotname)
     tmp_str = 'Grid graph of dimension: ' + str(d) + '\n'
     tmp_str += 'k = ' + str(k) + ', '
     tmp_str += 'trials = ' + str(trials) + '\n\n\n'
