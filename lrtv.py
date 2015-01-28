@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import math
 import scipy as sp
 import scipy.linalg as la
 import networkx as nx
@@ -7,9 +8,8 @@ import matplotlib.pyplot as plt
 
 
 def spectral_projection(A, k):
-    """Generate top k eigenvectors of A"""
-    n = len(A)
-    w, v = la.eigh(A, eigvals=(n-k, n-1))
+    """Generate first k eigenvectors of A"""
+    w, v = la.eigh(A, eigvals=(0, k-1))
     return (w, v)
 
 
@@ -71,7 +71,8 @@ def cheeger_sweep(A, v, k, lambda_k, f):
     h = randomized_rounding(v, k)
     sets = []
     threshold = lambda_k * sp.log(k)
-    threshold = threshold ** 0.5
+    threshold = math.sqrt(threshold)
+    print('threshold:' + str(threshold))
     for i in range(0, k):
         indices = [j[0] for j in sorted(enumerate(h[i]), key=lambda x: abs(x[1]))]
         # Discard vertices with zero entries
@@ -151,7 +152,7 @@ def draw(G):
 
 
 def plot(k_cuts_list, plotname):
-    scale = 100
+    scale = 1
     for i in range(len(k_cuts_list)):
         y_data = [y for (x, y, z) in k_cuts_list[i]]
         x_data = [x*scale for x in range(len(y_data))]
@@ -174,8 +175,11 @@ def generate_grid_graph():
     G = nx.grid_graph(dim=d)
     A = nx.adjacency_matrix(G).toarray()
     L = nx.normalized_laplacian_matrix(G).toarray()
+    (tmpw, tmpv) = la.eigh(L, eigvals=(0, 1))
+    tmp = 2*math.sqrt(tmpw[1])
+    print('cheeger upperbound:' + str(tmp))
     (w, v) = spectral_projection(L, k)
-    lambda_k = w[0]
+    lambda_k = w[k-1]
     k_cuts_list = lrtv(A, v, k, lambda_k, trials, gridfile)
     plotname = gridfname + 'plot'
     plot(k_cuts_list, plotname)
@@ -207,8 +211,11 @@ def generate_product_graph():
     T = nx.cartesian_product(G, H)
     A = nx.adjacency_matrix(T).toarray()
     L = nx.normalized_laplacian_matrix(T).toarray()
+    (tmpw, tmpv) = la.eigh(L, eigvals=(0, 1))
+    tmp = 2*math.sqrt(tmpw[1])
+    print('cheeger upperbound:' + str(tmp))
     (w, v) = spectral_projection(L, k)
-    lambda_k = w[0]
+    lambda_k = w[k-1]
     tmp_str = 'Cartesian product of balanced tree of height ' + str(h)
     tmp_str += ' and path of length ' + str(n-1) + '\n'
     tmp_str += 'k = ' + str(k) + ', '
@@ -248,8 +255,11 @@ def generate_noisy_hypercube():
                 G.add_edge(u, v, weight=w)
     A = nx.adjacency_matrix(G).toarray()
     L = nx.normalized_laplacian_matrix(G).toarray()
+    (tmpw, tmpv) = la.eigh(L, eigvals=(0, 1))
+    tmp = 2*math.sqrt(tmpw[1])
+    print('cheeger upperbound:' + str(tmp))
     (w, v) = spectral_projection(L, k)
-    lambda_k = w[0]
+    lambda_k = w[k-1]
     tmp_str = 'Noisy hypercube of dimension ' + str(n)
     tmp_str += ' with noise parameter ' + str(epsilon) + '\n'
     tmp_str += 'k = ' + str(k) + ', '
