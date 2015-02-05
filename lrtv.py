@@ -198,20 +198,28 @@ def generate_grid_graph():
 
 
 def generate_product_graph():
-    '''Generates k cuts for cartesian product of a path and a binary tree'''
+    '''Generates k cuts for cartesian product of a path and a double tree'''
     k = int(input('k for product of tree & path:'))
     trials = int(input('number of trials:'))
     prodfname = input('output file:')
     prodfname = 'hard_instances/' + prodfname
     prodfile = open(prodfname, 'wb', 0)
     h = int(input('height of the tree: '))
-    H = nx.balanced_tree(2, h)
-    n = int(input('number of nodes in path: '))
+    H1 = nx.balanced_tree(2, h)
+    H2 = nx.balanced_tree(2, h)
+    H = nx.disjoint_union(H1, H2)
+    n = H.number_of_nodes()
+    p = math.pow(2, h+1) - 1
+    H.add_edge(0, p)
+    n = 4*math.sqrt(n)
+    n = math.floor(n)
+    print('Length of path graph: ' + str(n))
     G = nx.path_graph(n)
+    tmpL = nx.normalized_laplacian_matrix(G).toarray()
     T = nx.cartesian_product(G, H)
     A = nx.adjacency_matrix(T).toarray()
     L = nx.normalized_laplacian_matrix(T).toarray()
-    (tmpw, tmpv) = la.eigh(L, eigvals=(0, 1))
+    (tmpw, tmpv) = la.eigh(L)
     tmp = 2*math.sqrt(tmpw[1])
     print('cheeger upperbound:' + str(tmp))
     (w, v) = spectral_projection(L, k)
