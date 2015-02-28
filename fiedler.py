@@ -77,3 +77,9 @@ def general_fiedler(G, k, trials, plotname):
     plt.plot(x_data, k_data, linewidth=2)
     plt.axis([0, trials, 0, k+10])
     plt.savefig(plotname)
+
+
+def search(G, trials, plotname):
+    n = len(G.nodes())
+    for k in range(2, n):
+        general_fiedler(G, k, trials, plotname)
