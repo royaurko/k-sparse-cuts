@@ -77,13 +77,3 @@ def general_fiedler(G, k, trials, plotname):
     plt.plot(x_data, k_data, linewidth=2)
     plt.axis([0, trials, 0, k+10])
     plt.savefig(plotname)
-
-
-
-
-
-
-
-
-
-
