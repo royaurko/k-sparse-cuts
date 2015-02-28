@@ -1,77 +1,89 @@
-#!/usr/bin/python3
 import networkx as nx
+import scipy as sp
 import scipy.linalg as la
 import random
-'''Check if generalized fiedler's theorem is true'''
+import matplotlib.pyplot as plt
 
 
-def countsign(z):
+def keigenvectors(G, k):
+    '''Return the bottom k eigenvectors of the Laplacian'''
+    L = nx.laplacian_matrix(G).toarray()
+    (w, v) = la.eigh(L, eigvals=(0, k-1))
+    return v
+
+
+def thresholdcut(z, t):
+    '''Return the set W = { i : z_i \ge t}'''
+    cut1 = [i for i in range(len(z)) if z[i] >= t]
+    cut2 = [i for i in range(len(z)) if z[i] < t]
+    return (cut1, cut2)
+
+
+def edgesignchange(G, z, t):
+    '''Return the number of edges (u, v) such that z_u*z_v < t'''
     counter = 0
-    if z[0] >= 0:
-        sign = 1
-    else:
-        sign = -1
-    for i in range(len(z)-1):
-        if z[i+1]*sign < 0:
+    for edge in G.edges():
+        if z[edge[0]]*z[edge[1]] < t:
             counter += 1
-            if z[i+1] >= 0:
-                sign = 1
-            else:
-                sign = -1
     return counter
 
 
-def general_fiedler_path(n, trials, k):
-    print('k=' + str(k))
-    G = nx.path_graph(n)
-    L = nx.laplacian_matrix(G).toarray();
-    (w, v) = la.eigh(L)
-    flag = 0
-    for x in range(trials):
-        z = random.uniform(-5, 5)*v[:, 0]
-        for i in range(0, k-1):
-            z += random.uniform(-5, 5)*v[:, i+1]
-        counter = countsign(z)
-        if counter > k-1:
-            print(z)
-            print(counter)
-            flag = 1
-    if flag==0:
-        print('None found')
+def randomvector(v):
+    '''Generate a random vector in the span of the columns of v'''
+    multiplier = []
+    k = len(v[0])
+    for j in range(k):
+        multiplier.append(random.uniform(-5, 5))
+    return sp.dot(v, multiplier)
 
 
-def general_fiedler(G, trials, k):
-    print('k='+str(k))
-    L = nx.laplacian_matrix(G).toarray()
-    (w, v) = la.eigh(L)
-    flag = 0
-    for i  in range(trials):
-        z = random.uniform(-5, 5)*v[:, 0]
-        for i in range(0, k-1):
-            z += random.uniform(-5, 5)*v[:, i+1]
-        y = threshold_cut(z)
-        H = G.subgraph(y)
-        n = nx.number_connected_components(H)
-        if n > k-1:
-            flag = 1
-            print('number of components:' + str(n))
-    if flag == 0:
-        print('not found')
-
-
-def threshold_cut(z):
-    '''Output set W = {i : z_i \ge 0}'''
-    y = []
-    for i in range(len(z)):
+def nonnegative(z):
+    '''For a star graph if the central vertex is negative, counts the number of nonnegative entries'''
+    if z[0] >= 0:
+        return
+    counter = 0
+    for i in range(1, len(z)):
         if z[i]>=0:
-            y.append(i)
-    return y
+            counter += 1
+    return counter
 
 
-if __name__ == '__main__':
-    n = 10
-    k = 5
-    trials = 10
-    G = nx.path_graph(3000)
-    general_fiedler(G, trials, k)
-    # general_fiedler_path(n, trials, k)
+def general_fiedler(G, k, trials, plotname):
+    '''Number of components when you apply the threshold cut on a random vector in the span of 1st k'''
+    v = keigenvectors(G, k)
+    flag = 1
+    x_data = []
+    y_data = []
+    for i in range(trials):
+        z = randomvector(v)
+        (y1, y2) = thresholdcut(z, 0)
+        H1 = G.subgraph(y1)
+        n1 = nx.number_connected_components(H1)
+        H2 = G.subgraph(y2)
+        n2 = nx.number_connected_components(H2)
+        if n1 < n2:
+            n = n1
+        else:
+            n = n2
+        x_data.append(i)
+        y_data.append(n)
+        if n > k-1:
+            flag = 0
+            print 'Number of components: ' + str(n)
+    if flag:
+        print 'Not found, number of components: ' + str(n)
+    k_data = [k-1 for x in x_data]
+    plt.plot(x_data, y_data, 'ro')
+    plt.plot(x_data, k_data, linewidth=2)
+    plt.axis([0, trials, 0, k+10])
+    plt.savefig(plotname)
+
+
+
+
+
+
+
+
+
+
