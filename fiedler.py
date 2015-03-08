@@ -33,7 +33,7 @@ def randomvector(v):
     multiplier = []
     k = len(v[0])
     for j in range(k):
-        multiplier.append(random.uniform(-5, 5))
+        multiplier.append(random.uniform(0, 5))
     return sp.dot(v, multiplier)
 
 
@@ -43,7 +43,7 @@ def nonnegative(z):
         return
     counter = 0
     for i in range(1, len(z)):
-        if z[i]>=0:
+        if z[i] >= 0:
             counter += 1
     return counter
 
@@ -51,6 +51,7 @@ def nonnegative(z):
 def general_fiedler(G, k, trials, plotname):
     '''Number of components when you apply the threshold cut on a random vector in the span of 1st k'''
     v = keigenvectors(G, k)
+    print v
     flag = 1
     x_data = []
     y_data = []
@@ -70,6 +71,7 @@ def general_fiedler(G, k, trials, plotname):
         if n > k-1:
             flag = 0
             print 'Number of components: ' + str(n)
+            print 'z = ' + str(z)
     if flag:
         print 'Not found, number of components: ' + str(n)
     k_data = [k-1 for x in x_data]
@@ -83,3 +85,22 @@ def search(G, trials, plotname):
     n = len(G.nodes())
     for k in range(2, n):
         general_fiedler(G, k, trials, plotname)
+
+
+def doublethreshold(G, v):
+    '''Given vector v check number of components in both sides of all possible thresholds'''
+    n = len(v)
+    u = [(v[i], i) for i in range(n)]
+    u.sort()
+    result = list()
+    for i in range(1, n):
+        tmp1 = u[:i]
+        tmp2 = u[i:]
+        tmp1 = [x[1] for x in tmp1]
+        tmp2 = [x[1] for x in tmp2]
+        H1 = G.subgraph(tmp1)
+        H2 = G.subgraph(tmp2)
+        n1 = nx.number_connected_components(H1)
+        n2 = nx.number_connected_components(H2)
+        result.append(max(n1, n2))
+    return reduce(lambda x, y:max(x, y), result)
